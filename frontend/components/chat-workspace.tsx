@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation"
 import { ChatInputBox } from "./ChatInputBox"
 import { TextShimmer } from "./motion-primitives/text-shimmer"
 import LogoIcon from "./icons/logo"
+import { ChatSkeleton } from "./skeletons/chat-skeleton"
 
 const suggestedPrompts = [
   "Hiring a Java backend developer",
@@ -195,67 +196,68 @@ export function ChatWorkspace({ chatId }: { chatId?: string }) {
         ref={scrollContainerRef}
         className="flex-1"
       >
-        {messages.length === 0 && !isLoading ? (
-          <div className="h-full min-h-[60vh] flex flex-col items-center justify-center p-4">
-            <div className="relative mb-8">
-              <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
-              <div className="relative flex aspect-square size-20 items-center justify-center rounded-3xl bg-primary text-primary-foreground">
-                <LogoIcon className="size-20"/>
-              </div>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-light mb-3 text-center">
-              How can I help you hire today?
-            </h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mt-8">
-              {suggestedPrompts.map((prompt, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleSend(prompt)}
-                  className="p-4 rounded-2xl bg-card border border-border hover:bg-accent transition-all text-left text-sm"
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-6 max-w-3xl mx-auto px-5 pt-5 pb-40">
-            {messages.map(msg => (
-              <ChatMessage key={msg.id || msg._id} message={msg} />
-            ))}
-
-            {/* Status indicator — hidden once first token arrives */}
-            {showStatusIndicator && (
-              <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-                    {currentStatus === "thinking"   && <IconLoader2 size={18} className="animate-spin" />}
-                    {currentStatus === "retrieving" && <IconSearch size={18} className="animate-pulse" />}
-                    {currentStatus === "reading"    && <IconBook size={18} className="animate-pulse" />}
-                    {currentStatus === "generating" && <IconSparkles size={18} className="animate-pulse" />}
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <TextShimmer className="font-mono text-sm" duration={1}>
-                        {currentStatus + "…"}
-                      </TextShimmer>
-                      {currentIntent && (
-                        <span className="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-primary/20 text-primary">
-                          {currentIntent}
-                        </span>
-                      )}
-                    </div>
-                    {statusDetail && (
-                      <span className="text-xs text-muted-foreground">{statusDetail}</span>
-                    )}
-                  </div>
+        {isLoading ? <ChatSkeleton /> :
+          messages.length === 0 ? (
+            <div className="h-full min-h-[60vh] flex flex-col items-center justify-center p-4">
+              <div className="relative mb-8">
+                <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
+                <div className="relative flex aspect-square size-20 items-center justify-center rounded-3xl bg-primary text-primary-foreground">
+                  <LogoIcon className="size-20" />
                 </div>
               </div>
-            )}
+              <h1 className="text-3xl md:text-4xl font-light mb-3 text-center">
+                How can I help you hire today?
+              </h1>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mt-8">
+                {suggestedPrompts.map((prompt, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSend(prompt)}
+                    className="p-4 rounded-2xl bg-card border border-border hover:bg-accent transition-all text-left text-sm"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-6 max-w-3xl mx-auto px-5 pt-5 pb-40">
+              {messages.map(msg => (
+                <ChatMessage key={msg.id || msg._id} message={msg} />
+              ))}
 
-            <div ref={messagesEndRef} />
-          </div>
-        )}
+              {/* Status indicator — hidden once first token arrives */}
+              {showStatusIndicator && (
+                <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+                      {currentStatus === "thinking" && <IconLoader2 size={18} className="animate-spin" />}
+                      {currentStatus === "retrieving" && <IconSearch size={18} className="animate-pulse" />}
+                      {currentStatus === "reading" && <IconBook size={18} className="animate-pulse" />}
+                      {currentStatus === "generating" && <IconSparkles size={18} className="animate-pulse" />}
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <TextShimmer className="font-mono text-sm" duration={1}>
+                          {currentStatus + "…"}
+                        </TextShimmer>
+                        {currentIntent && (
+                          <span className="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-primary/20 text-primary">
+                            {currentIntent}
+                          </span>
+                        )}
+                      </div>
+                      {statusDetail && (
+                        <span className="text-xs text-muted-foreground">{statusDetail}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+          )}
       </div>
 
       {/* ── Input — sticky to bottom of flex column, not position:sticky ── */}
@@ -264,7 +266,7 @@ export function ChatWorkspace({ chatId }: { chatId?: string }) {
         setInput={setInput}
         onSend={handleSend}
         isGenerating={isGenerating}
-        onStop={() => {}}
+        onStop={() => { }}
         disabled={false}
       />
     </div>

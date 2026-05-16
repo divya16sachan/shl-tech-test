@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { NavUser } from "./nav-user"
+import SidebarSkeleton from "./skeletons/sidebar-skeleton"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: conversations, isLoading } = useConversations()
@@ -62,7 +63,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarGroupContent>
             <SidebarMenu>
               {isLoading ? (
-                <div className="px-4 py-2 text-xs text-muted-foreground">Loading...</div>
+                <SidebarSkeleton />
               ) : conversations?.map((chat: any) => {
                 const isActive = pathname === `/${chat._id}`
                 return (
