@@ -1,0 +1,117 @@
+/* Highlight.js Dark Theme Overrides (GitHub Dark Dimmed style) */
+@import 'highlight.js/styles/github.css';
+
+/* next-themes uses .dark class on <html>, not prefers-color-scheme */
+.dark .hljs                        { background: hsl(var(--muted)); color: #e6edf3; }
+.dark .hljs-comment,
+.dark .hljs-quote                  { color: #8b949e; }
+.dark .hljs-keyword,
+.dark .hljs-selector-tag,
+.dark .hljs-deletion               { color: #ff7b72; }
+.dark .hljs-string,
+.dark .hljs-attr,
+.dark .hljs-addition               { color: #a5d6ff; }
+.dark .hljs-number,
+.dark .hljs-literal,
+.dark .hljs-type                   { color: #79c0ff; }
+.dark .hljs-title,
+.dark .hljs-section                { color: #d2a8ff; }
+.dark .hljs-built_in,
+.dark .hljs-name                   { color: #ffa657; }
+.dark .hljs-variable,
+.dark .hljs-template-variable      { color: #e6edf3; }
+.dark .hljs-tag                    { color: #7ee787; }
+.dark .hljs-attribute              { color: #79c0ff; }
+.dark pre,
+.dark code.hljs                    { background: hsl(var(--muted)); }
+
+/* Markdown Base Styles */
+.markdown-content {
+  @apply text-foreground/90 leading-relaxed;
+}
+
+.markdown-content h1 {
+  @apply text-2xl font-bold mt-6 mb-4 text-foreground;
+}
+
+.markdown-content h2 {
+  @apply text-xl font-semibold mt-5 mb-3 text-foreground;
+}
+
+.markdown-content h3 {
+  @apply text-lg font-medium mt-4 mb-2 text-foreground;
+}
+
+.markdown-content p {
+  @apply mb-4 last:mb-0;
+}
+
+.markdown-content ul, .markdown-content ol {
+  @apply mb-4 pl-6;
+}
+
+.markdown-content ul {
+  @apply list-disc;
+}
+
+.markdown-content ol {
+  @apply list-decimal;
+}
+
+.markdown-content li {
+  @apply mb-1;
+}
+
+.markdown-content blockquote {
+  @apply border-l-4 border-primary/40 pl-4 py-1 italic my-4 bg-muted/30 rounded-r-lg;
+}
+
+.markdown-content a {
+  @apply text-primary hover:underline transition-all font-medium;
+}
+
+.markdown-content code:not(pre code) {
+  @apply px-1.5 py-0.5 rounded-md bg-muted text-foreground font-mono text-[0.9em] border border-border/50;
+}
+
+.markdown-content table {
+  @apply w-full border-collapse my-6 overflow-hidden rounded-xl border border-border;
+}
+
+.markdown-content th {
+  @apply bg-muted/50 px-4 py-2 text-left font-semibold border-b border-border;
+}
+
+.markdown-content td {
+  @apply px-4 py-2 border-b border-border/50;
+}
+
+.markdown-content tr:last-child td {
+  @apply border-b-0;
+}
+
+/* Enhanced Code Block Styles */
+.code-block-container {
+  @apply my-6 rounded-xl overflow-hidden border border-border shadow-md bg-muted/30 transition-all hover:shadow-lg;
+}
+
+.code-block-header {
+  @apply flex items-center justify-between px-4 py-2.5 bg-muted/30 text-[11px] uppercase tracking-wider font-semibold text-muted-foreground border-b border-border/50;
+}
+
+.code-block-header .lang-badge {
+  @apply text-primary font-mono lowercase;
+}
+
+.code-block-copy-btn {
+  @apply flex items-center gap-1.5 hover:text-foreground transition-colors py-1 px-2 rounded-md hover:bg-muted/20;
+}
+
+.code-block-pre {
+  @apply p-4 overflow-x-auto text-[13.5px] leading-relaxed font-mono selection:bg-primary/30;
+}
+
+.code-block-pre code {
+  @apply bg-transparent p-0 border-none rounded-none;
+}
+
