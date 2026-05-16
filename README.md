@@ -6,7 +6,7 @@
   <br />
   <br />
 
-  [![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Now-4ade80?style=for-the-badge&logoColor=white)](https://your-demo-url.com)
+  [![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Now-4ade80?style=for-the-badge&logoColor=white)](https://shl-tech-test.vercel.app/)
 
   <br />
 
