@@ -5,9 +5,12 @@ import { ENV } from './config/env.js';
 import healthRoutes from './routes/health.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import conversationRoutes from './routes/conversation.routes.js';
+import evalRoutes from './routes/eval.routes.js';
 import apiDocs from '../apiDocs.json' with { type: 'json' };
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: '*',
+}));
 app.use(express.json());
 // ─── Root API Documentation ────────────────────────────────────────────────
 app.get('/', (_req, res) => {
@@ -17,6 +20,7 @@ app.get('/', (_req, res) => {
 app.use('/health', healthRoutes);
 app.use('/chat', chatRoutes);
 app.use('/conversations', conversationRoutes);
+app.use('/eval', evalRoutes);
 // Connect to DB and start server
 async function startServer() {
     try {

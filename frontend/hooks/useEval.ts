@@ -23,6 +23,7 @@ export const useLatestEvalRun = () =>
     queryKey: ['eval-run', 'latest'],
     queryFn: fetchLatestEvalRun,
     retry: false,
+    staleTime: 5 * 60 * 1000, // Cache results for 5 minutes
   });
 
 export const useEvalRun = (id: string | null) =>
@@ -30,6 +31,7 @@ export const useEvalRun = (id: string | null) =>
     queryKey: ['eval-run', id],
     queryFn: () => fetchEvalRun(id!),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000, // Cache results for 5 minutes
   });
 
 // ─── Live SSE streaming hook ──────────────────────────────────────────────────

@@ -1,16 +1,13 @@
 "use client"
 
+import { useEffect } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { RecommendationsPanel } from "@/components/recommendations-panel"
 import {
   SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
+  SidebarProvider
 } from "@/components/ui/sidebar"
-import { Separator } from "@/components/ui/separator"
 import { useChatStore } from "@/store/useChatStore"
-import { Button } from "@/components/ui/button"
-import { IconLayoutSidebarRight } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import {
   Sheet,
@@ -19,41 +16,33 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { ModeToggle } from "@/components/ui/mode-toggle"
+import AppHeader from "@/components/app-header"
+import { usePathname } from "next/navigation"
 
 export default function ChatLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const pathname = usePathname()
   const { isRecommendationsOpen, setRecommendationsOpen, recommendations } = useChatStore()
   const isMobile = useIsMobile()
-  const hasRecommendations = recommendations && recommendations.length > 0
+  const isEvalPage = pathname?.startsWith("/eval")
+  const hasRecommendations = !isEvalPage && recommendations && recommendations.length > 0
+
+  // If we are on mobile, default the sheet to closed on initial load
+  useEffect(() => {
+    if (isMobile) {
+      setRecommendationsOpen(false)
+    }
+  }, [isMobile, setRecommendationsOpen])
 
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset className="flex flex-row bg-background">
         <div className="flex flex-col flex-1 border-r border-border relative">
-          <header className="flex h-14 sticky top-0 shrink-0 items-center justify-between gap-2 px-4 border-b border-border bg-background/90 backdrop-blur-md z-30">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mx-2" />
-              <span className="text-sm font-medium truncate">SHL AI Recruiter Assistant</span>
-            </div>
-            <div className="flex gap-2 items-center">
-              <ModeToggle />
-              {hasRecommendations && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setRecommendationsOpen(!isRecommendationsOpen)}
-                >
-                  <IconLayoutSidebarRight />
-                </Button>
-              )}
-            </div>
-          </header>
+          <AppHeader/>
           <main className="flex-1 flex flex-col">
             {children}
           </main>

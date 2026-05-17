@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,8 +22,18 @@ import {
   IconChartBar,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
-import { useStreamEval, TraceActivity } from "@/hooks/useEval";
+import { useStreamEval, TraceActivity, useEvalRun, useLatestEvalRun } from "@/hooks/useEval";
 import type { TraceResult, EvalSummary } from "@/lib/evalApi";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from "recharts";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -165,18 +176,18 @@ function TraceRow({ trace, isNew }: { trace: TraceResult; isNew?: boolean }) {
       )}
     >
       <button
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/40 transition-colors"
+        className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 text-left hover:bg-muted/40 transition-colors"
         onClick={() => setOpen((p) => !p)}
       >
-        <span className="text-xs text-muted-foreground w-5 shrink-0">#{trace.id}</span>
-        <span className="flex-1 text-sm font-medium text-foreground truncate">{trace.title}</span>
+        <span className="text-xs text-muted-foreground w-4 sm:w-5 shrink-0">#{trace.id}</span>
+        <span className="flex-1 text-xs sm:text-sm font-medium text-foreground truncate">{trace.title}</span>
         <span className="hidden sm:block text-xs text-muted-foreground min-w-[140px] truncate">
           {trace.persona}
         </span>
 
         {/* Recall bar */}
-        <div className="flex items-center gap-2 w-24 shrink-0">
-          <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+        <div className="flex items-center gap-1.5 sm:gap-2 w-12 sm:w-24 shrink-0 justify-end sm:justify-start">
+          <div className="hidden sm:block flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
             <div
               className={cn(
                 "h-full rounded-full transition-all duration-700",
@@ -187,7 +198,7 @@ function TraceRow({ trace, isNew }: { trace: TraceResult; isNew?: boolean }) {
           </div>
           <span
             className={cn(
-              "text-xs tabular-nums min-w-[32px] text-right",
+              "text-xs font-mono tabular-nums min-w-[28px] text-right",
               isSpecialTrace ? "text-muted-foreground" : recallColor(trace.recall)
             )}
           >
@@ -201,7 +212,7 @@ function TraceRow({ trace, isNew }: { trace: TraceResult; isNew?: boolean }) {
 
         <span
           className={cn(
-            "text-[11px] font-semibold px-2 py-0.5 rounded border min-w-[44px] text-center",
+            "text-[10px] sm:text-[11px] font-semibold px-1.5 sm:px-2 py-0.5 rounded border min-w-[38px] sm:min-w-[44px] text-center shrink-0",
             statusStyles[variant]
           )}
         >
@@ -327,53 +338,96 @@ function TraceRow({ trace, isNew }: { trace: TraceResult; isNew?: boolean }) {
 }
 
 function RecallChart({ traces }: { traces: TraceResult[] }) {
-  const MAX_H = 160;
-  const yTicks = [0, 0.25, 0.5, 0.75, 1.0];
+  const chartConfig = {
+    recall: {
+      label: "Recall Rate",
+    },
+  } satisfies ChartConfig;
+
+  const chartData = traces.map((t) => {
+    const isSpecial = t.isVague || t.isOffTopic;
+    const displayRecall = isSpecial ? 0.15 : t.recall;
+    
+    let fill = "#ef4444"; // Red
+    if (isSpecial) {
+      fill = "currentColor";
+    } else if (t.recall >= 0.8) {
+      fill = "#10b981"; // Emerald
+    } else if (t.recall >= 0.6) {
+      fill = "#f59e0b"; // Amber
+    }
+
+    return {
+      name: `#${t.id}`,
+      title: t.title,
+      recall: displayRecall,
+      rawRecall: t.recall,
+      isSpecial,
+      fill,
+    };
+  });
+
   return (
-    <div className="flex gap-2 items-end" style={{ height: MAX_H + 32 }}>
-      <div className="flex flex-col justify-between items-end pr-2" style={{ height: MAX_H }}>
-        {[...yTicks].reverse().map((v) => (
-          <span key={v} className="text-[10px] text-muted-foreground tabular-nums">
-            {v.toFixed(2)}
-          </span>
-        ))}
-      </div>
-      <div className="flex-1 flex flex-col">
-        <div className="relative flex-1" style={{ height: MAX_H }}>
-          {yTicks.map((v) => (
-            <div
-              key={v}
-              className="absolute left-0 right-0 border-t border-border/40"
-              style={{ bottom: `${v * 100}%` }}
-            />
-          ))}
-          <div className="absolute inset-0 flex items-end gap-2 px-1">
-            {traces.map((t) => {
-              const isSpecial = t.isVague || t.isOffTopic;
-              const barH = isSpecial ? MAX_H * 0.15 : t.recall * MAX_H;
-              return (
-                <div key={t.id} className="flex-1 flex flex-col items-center gap-1">
-                  <div
-                    className={cn(
-                      "w-full rounded-t-sm transition-all duration-700",
-                      isSpecial ? "bg-muted-foreground/30" : recallBarColor(t.recall)
-                    )}
-                    style={{ height: barH }}
-                    title={isSpecial ? "clarify/refuse" : `Recall: ${t.recall.toFixed(2)}`}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        <div className="flex gap-2 px-1 pt-2">
-          {traces.map((t) => (
-            <div key={t.id} className="flex-1 text-center text-[10px] text-muted-foreground">
-              #{t.id}
-            </div>
-          ))}
-        </div>
-      </div>
+    <div className="h-[220px] w-full pt-4">
+      <ChartContainer config={chartConfig} className="h-full w-full">
+        <BarChart
+          accessibilityLayer
+          data={chartData}
+          margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+        >
+          <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/40" />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            domain={[0, 1.0]}
+            ticks={[0, 0.25, 0.5, 0.75, 1.0]}
+            tickFormatter={(value) => value.toFixed(2)}
+            className="text-[10px] fill-muted-foreground font-mono"
+          />
+          <XAxis
+            dataKey="name"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            className="text-[10px] fill-muted-foreground font-mono"
+          />
+          <ChartTooltip
+            cursor={{ fill: "rgba(0, 0, 0, 0.04)" }}
+            content={
+              <ChartTooltipContent
+                labelFormatter={(label, payload) => {
+                  const item = payload?.[0]?.payload;
+                  if (!item) return label;
+                  return `${label} · ${item.title}`;
+                }}
+                formatter={(value, name, item) => {
+                  const raw = item.payload.rawRecall;
+                  const isSpecial = item.payload.isSpecial;
+                  return (
+                    <div className="flex flex-1 justify-between items-center gap-4 leading-none w-full">
+                      <span className="text-muted-foreground">Recall Rate</span>
+                      <span className="font-mono font-medium text-foreground tabular-nums">
+                        {isSpecial ? "Vague / Off-Topic (N/A)" : `${(raw * 100).toFixed(0)}%`}
+                      </span>
+                    </div>
+                  );
+                }}
+              />
+            }
+          />
+          <Bar dataKey="recall" radius={[4, 4, 0, 0]}>
+            {chartData.map((entry, index) => (
+              <Cell 
+                key={`cell-${index}`} 
+                fill={entry.fill} 
+                className={entry.isSpecial ? "fill-muted-foreground/30" : ""}
+              />
+            ))}
+          </Bar>
+          <ChartLegend content={<ChartLegendContent />} className="text-[11px]" />
+        </BarChart>
+      </ChartContainer>
     </div>
   );
 }
@@ -506,17 +560,52 @@ function SummaryMetrics({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function EvalPage() {
-  const { state, run, reset } = useStreamEval();
-  const { phase, liveActivity, completedTraces, summary, total, durationMs, error, startDetail } =
-    state;
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const runId = searchParams.get("run");
+
+  // SSE Live Stream Hook
+  const { state: streamState, run: triggerStream, reset: resetStream } = useStreamEval();
+  const { phase, liveActivity, completedTraces: streamTraces, summary: streamSummary, total, durationMs: streamDuration, error, savedRunId, startDetail } = streamState;
+
+  // React Query DB fetch hooks
+  const { data: dbRun, isLoading: dbLoading } = useEvalRun(runId);
+  const { data: latestRun, isLoading: latestLoading } = useLatestEvalRun();
+
+  // If a run ID is saved from a completed live stream, navigate to it in the URL
+  useEffect(() => {
+    if (savedRunId) {
+      router.push(`/eval?run=${savedRunId}`);
+      resetStream(); // Reset stream state so we cleanly view the DB run
+    }
+  }, [savedRunId, router, resetStream]);
+
+  // Determine rendering modes
+  const isStreaming = phase === "running" || phase === "done";
+  const activeRun = runId ? dbRun : (phase === "idle" ? latestRun : null);
+  const isDBCardLoading = runId ? dbLoading : (phase === "idle" ? latestLoading : false);
+
+  const displayTraces = isStreaming ? streamTraces : (activeRun ? activeRun.traces : []);
+  const displaySummary = isStreaming ? streamSummary : (activeRun ? activeRun.summary : null);
+  const displayDuration = isStreaming ? streamDuration : (activeRun ? activeRun.durationMs : null);
 
   const isRunning = phase === "running";
-  const isDone = phase === "done";
+  const isDone = phase === "done" || (!isStreaming && !!activeRun);
 
   // Track which traces are "new" for entrance animation
   const newTraceIds = new Set(
-    isDone ? [] : completedTraces.slice(-1).map((t) => t.id)
+    phase === "done" ? [] : displayTraces.slice(-1).map((t: TraceResult) => t.id)
   );
+
+  const startNewRun = () => {
+    router.push("/eval");
+    triggerStream();
+  };
+
+  const handleReset = () => {
+    router.push("/eval");
+    resetStream();
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -527,10 +616,17 @@ export default function EvalPage() {
           <div>
             <h1 className="text-lg font-semibold text-foreground">Evaluation Dashboard</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {isDone && durationMs
-                ? `Completed in ${(durationMs / 1000).toFixed(1)}s · ${completedTraces.length} traces · live via SSE`
-                : isRunning
+              {isRunning
                 ? startDetail || "Streaming live evaluation…"
+                : activeRun && !isStreaming
+                ? `Evaluation run from ${new Date(activeRun.runAt).toLocaleString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })} · ${activeRun.traces?.length || 0} traces`
+                : isDone && displayDuration
+                ? `Completed in ${(displayDuration / 1000).toFixed(1)}s · ${displayTraces.length} traces`
                 : "Live scores from Qdrant + Groq · 8 traces · streaming SSE"}
             </p>
           </div>
@@ -539,7 +635,7 @@ export default function EvalPage() {
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={reset}
+                onClick={handleReset}
                 className="gap-1.5 text-muted-foreground"
               >
                 <IconRefresh size={13} />
@@ -549,7 +645,7 @@ export default function EvalPage() {
             <Button
               size="sm"
               variant={isRunning ? "outline" : "default"}
-              onClick={isRunning ? undefined : run}
+              onClick={isRunning ? undefined : startNewRun}
               disabled={isRunning}
               className="gap-1.5"
             >
@@ -575,13 +671,21 @@ export default function EvalPage() {
         {isRunning && (
           <LiveActivityBanner
             activity={liveActivity}
-            completed={completedTraces.length}
+            completed={displayTraces.length}
             total={total}
           />
         )}
 
-        {/* Idle empty state */}
-        {phase === "idle" && (
+        {/* Loading state from DB */}
+        {isDBCardLoading && (
+          <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
+            <IconLoader2 size={32} className="animate-spin text-primary shrink-0" />
+            <p className="text-sm font-medium text-foreground">Loading evaluation details…</p>
+          </div>
+        )}
+
+        {/* Idle empty state when no runs exist */}
+        {phase === "idle" && !activeRun && !isDBCardLoading && (
           <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
               <IconAlertTriangle size={24} className="text-muted-foreground" />
@@ -592,32 +696,32 @@ export default function EvalPage() {
                 Click "Run evaluation" to stream 8 traces live from Qdrant + Groq.
               </p>
             </div>
-            <Button onClick={run} className="gap-2">
+            <Button onClick={startNewRun} className="gap-2">
               <IconPlayerPlay size={14} />
               Run evaluation
             </Button>
           </div>
         )}
 
-        {/* Summary metrics — shown once final summary arrives */}
-        {summary && (
+        {/* Summary metrics — shown once final summary arrives or is loaded */}
+        {!isDBCardLoading && displaySummary && (
           <SummaryMetrics
-            summary={summary}
-            traceCount={completedTraces.length}
-            durationMs={durationMs}
+            summary={displaySummary}
+            traceCount={displayTraces.length}
+            durationMs={displayDuration}
           />
         )}
 
-        {/* Trace results — stream in as they complete */}
-        {completedTraces.length > 0 && (
+        {/* Trace results — stream in as they complete or loaded from DB */}
+        {!isDBCardLoading && displayTraces.length > 0 && (
           <div className="mb-1">
             <p className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-3">
               {isRunning
-                ? `Trace results · ${completedTraces.length} complete, ${total - completedTraces.length} remaining…`
+                ? `Trace results · ${displayTraces.length} complete, ${total - displayTraces.length} remaining…`
                 : "Trace results"}
             </p>
             <div className="flex flex-col gap-2">
-              {completedTraces.map((t) => (
+              {displayTraces.map((t: TraceResult) => (
                 <TraceRow key={t.id} trace={t} isNew={newTraceIds.has(t.id)} />
               ))}
             </div>
@@ -625,7 +729,7 @@ export default function EvalPage() {
         )}
 
         {/* Chart + footer — only shown when complete */}
-        {isDone && completedTraces.length > 0 && summary && (
+        {!isDBCardLoading && isDone && displayTraces.length > 0 && displaySummary && (
           <>
             <Separator className="my-6" />
             <div>
@@ -634,7 +738,7 @@ export default function EvalPage() {
               </p>
               <Card className="shadow-none border-border/60">
                 <CardContent className="p-5">
-                  <RecallChart traces={completedTraces} />
+                  <RecallChart traces={displayTraces} />
                   <div className="flex items-center gap-4 mt-3 justify-end flex-wrap">
                     {[
                       { color: "bg-emerald-500", label: "≥ 0.80 PASS" },
@@ -675,3 +779,5 @@ export default function EvalPage() {
     </div>
   );
 }
+
+

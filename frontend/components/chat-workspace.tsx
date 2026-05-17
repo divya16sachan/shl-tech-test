@@ -198,7 +198,7 @@ export function ChatWorkspace({ chatId }: { chatId?: string }) {
       >
         {isLoading ? <ChatSkeleton /> :
           messages.length === 0 ? (
-            <div className="h-full min-h-[60vh] flex flex-col items-center justify-center p-4">
+            <div className="h-full pb-32 py-8 min-h-[60vh] flex flex-col items-center justify-center p-4">
               <div className="relative mb-8">
                 <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
                 <div className="relative flex aspect-square size-20 items-center justify-center rounded-3xl bg-primary text-primary-foreground">

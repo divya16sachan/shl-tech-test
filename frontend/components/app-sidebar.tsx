@@ -10,6 +10,8 @@ import {
   IconCircleCheck,
   IconCircleX,
   IconLoader2,
+  IconHistory,
+  IconChevronRight,
 } from "@tabler/icons-react"
 
 import {
@@ -24,6 +26,9 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from "@/components/ui/sidebar"
 import {
   AlertDialog,
@@ -45,6 +50,8 @@ import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { NavUser } from "./nav-user"
 import SidebarSkeleton from "./skeletons/sidebar-skeleton"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible"
+import NavEval from "./nav-eval"
 
 function AppSidebarInner({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: conversations, isLoading } = useConversations()
@@ -126,66 +133,19 @@ function AppSidebarInner({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
+
+              {/* ── Past eval runs (only visible on /eval) ── */}
+              {isEvalPage && (
+                <NavEval
+                  evalLoading={evalLoading}
+                  evalRuns={evalRuns}
+                  activeRunId={activeRunId}
+                />
+              )}
             </SidebarGroupContent>
           </SidebarGroup>
 
-          {/* ── Past eval runs (only visible on /eval) ── */}
-          {isEvalPage && (
-            <SidebarGroup>
-              <SidebarGroupLabel className="text-[10px]">Past Runs</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {evalLoading ? (
-                    <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
-                      <IconLoader2 size={12} className="animate-spin" />
-                      Loading runs…
-                    </div>
-                  ) : evalRuns?.length ? (
-                    evalRuns.map((run: any) => {
-                      const isActiveRun = activeRunId === run._id
-                      const recall = run.summary?.meanRecall ?? 0
-                      const passed = recall >= 0.8
-                      const warned = recall >= 0.6 && recall < 0.8
-                      return (
-                        <SidebarMenuItem key={run._id}>
-                          <SidebarMenuButton
-                            asChild
-                            className={cn(
-                              "group w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
-                              isActiveRun ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
-                            )}
-                          >
-                            <Link href={`/eval?run=${run._id}`}>
-                              {passed ? (
-                                <IconCircleCheck size={14} className="shrink-0 text-emerald-500" />
-                              ) : warned ? (
-                                <IconCircleX size={14} className="shrink-0 text-amber-500" />
-                              ) : (
-                                <IconCircleX size={14} className="shrink-0 text-red-500" />
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <div className="text-xs font-medium truncate">
-                                  Recall {(recall * 100).toFixed(0)}%
-                                </div>
-                                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                                  <IconClockHour4 size={9} />
-                                  {new Date(run.runAt).toLocaleDateString(undefined, {
-                                    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-                                  })}
-                                </div>
-                              </div>
-                            </Link>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      )
-                    })
-                  ) : (
-                    <p className="px-3 py-2 text-xs text-muted-foreground">No runs yet</p>
-                  )}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          )}
+
 
           {/* ── Conversation history ── */}
           <SidebarGroup>
