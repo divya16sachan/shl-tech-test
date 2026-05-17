@@ -113,6 +113,34 @@
                     "test_types": "any[]    // raw test-type objects from catalog",
                     "test_type_codes": "string   // comma-separated short codes, e.g. \"A, B, K\"",
                     "description": "string   // full assessment description used in vector index"
+                },
+                "IEvalSummary": {
+                    "meanRecall": "number   // average Recall@10 of non-vague intents",
+                    "groundedness": "number   // percentage of grounded traces",
+                    "probePassRate": "number   // multi-point intent logic probe pass rate",
+                    "avgTurns": "number   // average turns utilized",
+                    "totalTraces": "number",
+                    "passedTraces": "number"
+                },
+                "IEvalTrace": {
+                    "id": "string   // short tracer ID",
+                    "title": "string   // name of the test query",
+                    "query": "string   // raw prompt",
+                    "persona": "string   // tester persona description",
+                    "isVague": "boolean",
+                    "isOffTopic": "boolean",
+                    "expectedAssessments": "string[] // canonical names required to pass recall",
+                    "retrieved": "string[] // assessment names returned from retrieval",
+                    "recall": "number   // computed Recall@10",
+                    "grounded": "boolean  // groundedness assessment",
+                    "intent": "Intent   // actual model-classified intent",
+                    "probes": {
+                        "clarified": "boolean",
+                        "refused": "boolean",
+                        "refined": "boolean",
+                        "turnCap": "boolean"
+                    },
+                    "note": "string   // evaluation reasoning/diagnostic log"
                 }
             }
         },
@@ -229,6 +257,85 @@
             },
             "errors": {
                 "500": "{ error: \"Failed to delete conversation\" }"
+            }
+        },
+        "GET /eval": {
+            "url": "https://shl-tech-test.onrender.com/eval",
+            "description": "Server-Sent Events (SSE) endpoint that streams the execution of the 8 evaluation probes in real-time, executing vector queries and intent classification live.",
+            "contentType": "text/event-stream",
+            "parameters": null,
+            "response": {
+                "description": "Streams real-time trace events. Does not persist results.",
+                "events": {
+                    "eval_start": { "shape": "{ type: \"eval_start\", total: number, detail: string }" },
+                    "trace_start": { "shape": "{ type: \"trace_start\", id: string, title: string, persona: string, detail: string }" },
+                    "trace_status": { "shape": "{ type: \"trace_status\", id: string, status: string, detail: string }" },
+                    "trace_complete": { "shape": "{ type: \"trace_complete\", id: string, trace: IEvalTrace }" },
+                    "eval_complete": { "shape": "{ type: \"eval_complete\", summary: IEvalSummary, totalDurationMs: number }" }
+                }
+            },
+            "errors": {
+                "500": "{ error: \"Evaluation failed\" }"
+            }
+        },
+        "POST /eval/run": {
+            "url": "https://shl-tech-test.onrender.com/eval/run",
+            "description": "Triggers a full synchronous evaluation run, calculates overall performance metrics, persists the run details in MongoDB, and returns the persisted document.",
+            "parameters": null,
+            "response": {
+                "type": "EvalRun",
+                "shape": {
+                    "_id": "string",
+                    "runAt": "string",
+                    "summary": "IEvalSummary",
+                    "traces": "IEvalTrace[]",
+                    "durationMs": "number"
+                }
+            },
+            "errors": {
+                "500": "{ error: \"Evaluation failed\" }"
+            }
+        },
+        "GET /eval/runs": {
+            "url": "https://shl-tech-test.onrender.com/eval/runs",
+            "description": "Lists all past evaluation runs sorted newest-first. Uses MongoDB projection to exclude the heavy `traces` array to minimize payloads.",
+            "parameters": null,
+            "response": {
+                "type": "Array<{ _id: string, runAt: string, summary: IEvalSummary, durationMs: number }>"
+            },
+            "errors": {
+                "500": "{ error: \"Failed to list runs\" }"
+            }
+        },
+        "GET /eval/runs/latest": {
+            "url": "https://shl-tech-test.onrender.com/eval/runs/latest",
+            "description": "Fetches the full details of the absolute latest historical evaluation run.",
+            "parameters": null,
+            "response": {
+                "type": "EvalRun"
+            },
+            "errors": {
+                "404": "{ error: \"No evaluation runs found\" }",
+                "500": "{ error: \"Failed to fetch latest run\" }"
+            }
+        },
+        "GET /eval/runs/:id": {
+            "url": "https://shl-tech-test.onrender.com/eval/runs/:id",
+            "description": "Fetches a specific historical evaluation run by its ObjectId.",
+            "parameters": {
+                "id": {
+                    "in": "path",
+                    "type": "string",
+                    "required": true,
+                    "description": "ObjectId of the EvalRun document."
+                }
+            },
+            "response": {
+                "type": "EvalRun"
+            },
+            "errors": {
+                "404": "{ error: \"Evaluation run not found\" }",
+                "500": "{ error: \"Failed to fetch run\" }"
             }
         }
     }
