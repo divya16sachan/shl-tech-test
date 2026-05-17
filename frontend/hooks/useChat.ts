@@ -38,5 +38,6 @@ export const useChatActions = () => {
   return {
     renameConversation: renameMutation.mutate,
     deleteConversation: deleteMutation.mutate,
+    deleteMutation, // expose full mutation for isPending + variables
   };
 };

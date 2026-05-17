@@ -5,9 +5,14 @@ import { ENV } from './config/env.js';
 import healthRoutes from './routes/health.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import conversationRoutes from './routes/conversation.routes.js';
+import apiDocs from '../apiDocs.json' with { type: 'json' };
 const app = express();
 app.use(cors());
 app.use(express.json());
+// ─── Root API Documentation ────────────────────────────────────────────────
+app.get('/', (_req, res) => {
+    res.json(apiDocs);
+});
 // Routes
 app.use('/health', healthRoutes);
 app.use('/chat', chatRoutes);

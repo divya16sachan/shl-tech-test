@@ -31,6 +31,8 @@ function buildDocText(a) {
     a.remote_testing ? "Available for remote testing" : "Not available for remote testing",
     a.adaptive_irt ? "Uses adaptive IRT technology" : "",
     a.description ? `Description: ${a.description}` : "",
+    a.potential_roles ? `Potential roles: ${a.potential_roles}` : "",
+    a.skills ? `Skills: ${a.skills}` : "",
   ];
   return parts.filter(Boolean).join(". ");
 }
@@ -77,7 +79,7 @@ async function ensureCollection() {
 // ── Main ───────────────────────────────────────────────────────────────────────
 async function main() {
   // 1. Load catalog
-  const raw = readFileSync("./seed/data.min.json", "utf-8");
+  const raw = readFileSync("./src/seed/data.min.json", "utf-8");
   const catalog = JSON.parse(raw);
   const assessments = catalog.assessments;
   console.log(`Loaded ${assessments.length} assessments\n`);
