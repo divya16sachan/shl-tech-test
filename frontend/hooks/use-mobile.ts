@@ -17,3 +17,19 @@ export function useIsMobile() {
 
   return !!isMobile
 }
+
+export function useIsLargeScreen() {
+  const [isLargeScreen, setIsLargeScreen] = React.useState<boolean | undefined>(undefined)
+
+  React.useEffect(() => {
+    const mql = window.matchMedia(`(min-width: 1024px)`)
+    const onChange = () => {
+      setIsLargeScreen(window.innerWidth >= 1024)
+    }
+    mql.addEventListener("change", onChange)
+    setIsLargeScreen(window.innerWidth >= 1024)
+    return () => mql.removeEventListener("change", onChange)
+  }, [])
+
+  return !!isLargeScreen
+}

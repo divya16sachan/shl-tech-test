@@ -97,18 +97,18 @@ function MetricCard({
 }) {
   return (
     <Card className="shadow-none border-border/60">
-      <CardContent className="p-4 flex flex-col gap-1">
-        <p className="text-xs text-muted-foreground font-medium">{label}</p>
+      <CardContent className="p-3 sm:p-4 flex flex-col gap-0.5 sm:gap-1">
+        <p className="text-[10px] sm:text-xs text-muted-foreground font-medium max-w-min truncate">{label}</p>
         <p
           className={cn(
-            "text-2xl font-semibold tabular-nums transition-all duration-500",
+            "text-xl sm:text-2xl font-semibold tabular-nums transition-all duration-500",
             colorClass ?? "text-foreground",
-            animate && "scale-110"
+            animate && "scale-105"
           )}
         >
           {value}
         </p>
-        <p className="text-[11px] text-muted-foreground">{sub}</p>
+        <p className="text-[10px] sm:text-[11px] text-muted-foreground leading-tight">{sub}</p>
       </CardContent>
     </Card>
   );
@@ -130,8 +130,8 @@ function AssessmentTag({
         hit
           ? "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-300"
           : missing
-          ? "bg-red-50 border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300"
-          : "bg-muted border-border text-muted-foreground"
+            ? "bg-red-50 border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300"
+            : "bg-muted border-border text-muted-foreground"
       )}
     >
       {hit ? <IconCheck size={10} /> : missing ? <IconX size={10} /> : null}
@@ -180,31 +180,33 @@ function TraceRow({ trace, isNew }: { trace: TraceResult; isNew?: boolean }) {
         onClick={() => setOpen((p) => !p)}
       >
         <span className="text-xs text-muted-foreground w-4 sm:w-5 shrink-0">#{trace.id}</span>
-        <span className="flex-1 text-xs sm:text-sm font-medium text-foreground truncate">{trace.title}</span>
-        <span className="hidden sm:block text-xs text-muted-foreground min-w-[140px] truncate">
+        <div className="flex-1 text-xs sm:text-sm font-medium text-foreground truncate">
+          <span className="flex-1 text-xs sm:text-sm font-medium text-foreground truncate">{trace.title}</span>
+
+          {/* Recall bar */}
+          <div className="flex items-center gap-1.5 sm:gap-2 w-24 shrink-0 justify-end sm:justify-start">
+            <div className=" flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all duration-700",
+                  isSpecialTrace ? "bg-muted-foreground/40" : recallBarColor(trace.recall)
+                )}
+                style={{ width: `${isSpecialTrace ? 100 : trace.recall * 100}%` }}
+              />
+            </div>
+            <span
+              className={cn(
+                "text-xs font-mono tabular-nums min-w-[28px] text-right",
+                isSpecialTrace ? "text-muted-foreground" : recallColor(trace.recall)
+              )}
+            >
+              {isSpecialTrace ? "—" : trace.recall.toFixed(2)}
+            </span>
+          </div>
+        </div>
+        <span className="hidden lg:block text-xs text-muted-foreground min-w-[140px] truncate">
           {trace.persona}
         </span>
-
-        {/* Recall bar */}
-        <div className="flex items-center gap-1.5 sm:gap-2 w-12 sm:w-24 shrink-0 justify-end sm:justify-start">
-          <div className="hidden sm:block flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-            <div
-              className={cn(
-                "h-full rounded-full transition-all duration-700",
-                isSpecialTrace ? "bg-muted-foreground/40" : recallBarColor(trace.recall)
-              )}
-              style={{ width: `${isSpecialTrace ? 100 : trace.recall * 100}%` }}
-            />
-          </div>
-          <span
-            className={cn(
-              "text-xs font-mono tabular-nums min-w-[28px] text-right",
-              isSpecialTrace ? "text-muted-foreground" : recallColor(trace.recall)
-            )}
-          >
-            {isSpecialTrace ? "—" : trace.recall.toFixed(2)}
-          </span>
-        </div>
 
         <span className="text-[10px] text-muted-foreground hidden md:block min-w-[60px]">
           {trace.intent}
@@ -347,7 +349,7 @@ function RecallChart({ traces }: { traces: TraceResult[] }) {
   const chartData = traces.map((t) => {
     const isSpecial = t.isVague || t.isOffTopic;
     const displayRecall = isSpecial ? 0.15 : t.recall;
-    
+
     let fill = "#ef4444"; // Red
     if (isSpecial) {
       fill = "currentColor";
@@ -418,9 +420,9 @@ function RecallChart({ traces }: { traces: TraceResult[] }) {
           />
           <Bar dataKey="recall" radius={[4, 4, 0, 0]}>
             {chartData.map((entry, index) => (
-              <Cell 
-                key={`cell-${index}`} 
-                fill={entry.fill} 
+              <Cell
+                key={`cell-${index}`}
+                fill={entry.fill}
                 className={entry.isSpecial ? "fill-muted-foreground/30" : ""}
               />
             ))}
@@ -456,26 +458,26 @@ function LiveActivityBanner({
           style={{ width: `${progress}%` }}
         />
       </div>
-      <div className="px-4 py-3 flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      <div className="px-4 py-3 flex flex-col gap-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <IconLoader2 size={13} className="animate-spin text-primary shrink-0" />
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-sm font-medium text-foreground truncate">
               Trace #{activity.id} · {activity.title}
             </span>
           </div>
-          <span className="text-[11px] text-muted-foreground tabular-nums">
+          <span className="text-[11px] text-muted-foreground tabular-nums self-end sm:self-auto">
             {completed}/{total}
           </span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
           {statusStepIcon[activity.status] ?? (
             <IconLoader2 size={12} className="animate-spin" />
           )}
-          <span>{activity.detail}</span>
+          <span className="truncate">{activity.detail}</span>
         </div>
         {/* Step pipeline dots */}
-        <div className="flex items-center gap-1 mt-0.5">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-0.5">
           {(["retrieving", "classifying", "scoring"] as const).map((step) => {
             const order = ["starting", "retrieving", "retrieved", "classifying", "classified", "scoring"];
             const currentIdx = order.indexOf(activity.status);
@@ -490,8 +492,8 @@ function LiveActivityBanner({
                     done
                       ? "bg-emerald-500"
                       : active
-                      ? "bg-primary animate-pulse"
-                      : "bg-muted-foreground/30"
+                        ? "bg-primary animate-pulse"
+                        : "bg-muted-foreground/30"
                   )}
                 />
                 <span className="text-[10px] text-muted-foreground">{step}</span>
@@ -528,8 +530,8 @@ function SummaryMetrics({
           summary.meanRecall >= 0.8
             ? "text-emerald-600 dark:text-emerald-400"
             : summary.meanRecall >= 0.6
-            ? "text-amber-600 dark:text-amber-400"
-            : "text-red-500"
+              ? "text-amber-600 dark:text-amber-400"
+              : "text-red-500"
         }
       />
       <MetricCard
@@ -612,25 +614,25 @@ export default function EvalPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
 
         {/* Top bar */}
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-lg font-semibold text-foreground">Evaluation Dashboard</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               {isRunning
                 ? startDetail || "Streaming live evaluation…"
                 : activeRun && !isStreaming
-                ? `Evaluation run from ${new Date(activeRun.runAt).toLocaleString(undefined, {
+                  ? `Evaluation run from ${new Date(activeRun.runAt).toLocaleString(undefined, {
                     month: "short",
                     day: "numeric",
                     hour: "2-digit",
                     minute: "2-digit",
                   })} · ${activeRun.traces?.length || 0} traces`
-                : isDone && displayDuration
-                ? `Completed in ${(displayDuration / 1000).toFixed(1)}s · ${displayTraces.length} traces`
-                : "Live scores from Qdrant + Groq · 8 traces · streaming SSE"}
+                  : isDone && displayDuration
+                    ? `Completed in ${(displayDuration / 1000).toFixed(1)}s · ${displayTraces.length} traces`
+                    : "Live scores from Qdrant + Groq · 8 traces · streaming SSE"}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
             {isDone && (
               <Button
                 size="sm"

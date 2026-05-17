@@ -41,7 +41,21 @@ export const streamChat = async (
     body: JSON.stringify({ conversationId, messages: [{ role: 'user', content }], model }),
   });
 
-  if (!response.body) return;
+  if (!response.ok) {
+    const errorText = await response.text();
+    let parsedError = "Failed to connect to the server.";
+    try {
+      const errorJson = JSON.parse(errorText);
+      parsedError = errorJson.error || errorJson.message || parsedError;
+    } catch {
+      parsedError = errorText || parsedError;
+    }
+    throw new Error(parsedError);
+  }
+
+  if (!response.body) {
+    throw new Error("No response body received from the server.");
+  }
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -60,16 +74,24 @@ export const streamChat = async (
             finished = true;
             break;
           }
+          
+          let parsedData: any = null;
           try {
-            const data = JSON.parse(dataStr);
-            if (data.type === 'text') onToken(data.content);
-            if (data.type === 'recommendations') onRecommendations(data.content);
-            if (data.type === 'conversationId') onComplete(data.content);
-            if (data.type === 'status' && onStatus) onStatus(data.status, data.detail);
-            if (data.type === 'intent' && onIntent) onIntent(data.intent);
-            if (data.type === 'retrieved_count' && onRetrievedCount) onRetrievedCount(data.count, data.detail);
-          } catch (e) {
-            // console.error('Error parsing chunk', e);
+            parsedData = JSON.parse(dataStr);
+          } catch {
+            continue;
+          }
+
+          if (parsedData) {
+            if (parsedData.type === 'error') {
+              throw new Error(parsedData.content || "An error occurred on the backend.");
+            }
+            if (parsedData.type === 'text') onToken(parsedData.content);
+            if (parsedData.type === 'recommendations') onRecommendations(parsedData.content);
+            if (parsedData.type === 'conversationId') onComplete(parsedData.content);
+            if (parsedData.type === 'status' && onStatus) onStatus(parsedData.status, parsedData.detail);
+            if (parsedData.type === 'intent' && onIntent) onIntent(parsedData.intent);
+            if (parsedData.type === 'retrieved_count' && onRetrievedCount) onRetrievedCount(parsedData.count, parsedData.detail);
           }
         }
       }

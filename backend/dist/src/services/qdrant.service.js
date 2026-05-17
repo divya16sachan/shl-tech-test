@@ -21,6 +21,9 @@ function getCatalog() {
     return catalogCache;
 }
 async function getEmbedder() {
+    if (process.env.NODE_ENV === 'production' || process.env.BYPASS_LOCAL_EMBEDDING === 'true') {
+        throw new Error('Local embedding is disabled in production/low-memory environments to prevent memory exhaustion (OOM).');
+    }
     if (!embedder) {
         embedder = await pipeline('feature-extraction', 'Xenova/bge-large-en-v1.5');
     }
@@ -54,9 +57,16 @@ Output ONLY a comma-separated list of the predicted assessment names and keyword
     }
 }
 export async function searchAssessments(query, limit = 5) {
+    let qdrantAssessments = [];
+    let expandedKeywords = '';
+    try {
+        expandedKeywords = await expandQuery(query);
+    }
+    catch (e) {
+        console.error('Error expanding query:', e);
+    }
     try {
         const extractor = await getEmbedder();
-        const expandedKeywords = await expandQuery(query);
         const [origOutput, expandedOutput] = await Promise.all([
             extractor(query, { pooling: 'mean', normalize: true }),
             expandedKeywords ? extractor(expandedKeywords, { pooling: 'mean', normalize: true }) : null
@@ -78,7 +88,7 @@ export async function searchAssessments(query, limit = 5) {
             limit: limit * 3, // get more candidates for deduplication
             with_payload: true,
         });
-        const qdrantAssessments = results.map((res) => ({
+        qdrantAssessments = results.map((res) => ({
             name: res.payload.name,
             url: res.payload.url,
             remote_testing: res.payload.remote_testing,
@@ -88,6 +98,11 @@ export async function searchAssessments(query, limit = 5) {
             description: res.payload.description,
             _score: res.score,
         }));
+    }
+    catch (error) {
+        console.warn('Vector search failed, falling back to pure fuzzy/keyword matching:', error instanceof Error ? error.message : error);
+    }
+    try {
         // In-memory Keyword Fallback using fuzzysort
         const catalog = getCatalog();
         const keywordMatches = [];
@@ -95,7 +110,7 @@ export async function searchAssessments(query, limit = 5) {
             query,
             expandedKeywords,
             ...expandedKeywords.split(/[\s,]+/).filter(t => t.length > 3)
-        ]));
+        ].filter(Boolean)));
         for (const term of termsToSearch) {
             const fuzzyResults = fuzzysort.go(term, catalog, {
                 key: 'name',
@@ -130,7 +145,7 @@ export async function searchAssessments(query, limit = 5) {
         return finalResults.map(({ _score, ...rest }) => rest);
     }
     catch (error) {
-        console.error('Error searching assessments:', error);
+        console.error('Error combining search results:', error);
         return [];
     }
 }

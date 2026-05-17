@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import morgan from 'morgan';
 import { connectDB } from './libs/db.js';
 import { ENV } from './config/env.js';
 import healthRoutes from './routes/health.routes.js';
@@ -14,6 +15,7 @@ app.use(cors({
     origin: '*',
 }));
 app.use(express.json());
+app.use(morgan('dev'));
 
 // ─── Root API Documentation ────────────────────────────────────────────────
 app.get('/', (_req, res) => {

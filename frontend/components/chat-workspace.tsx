@@ -167,8 +167,27 @@ export function ChatWorkspace({ chatId }: { chatId?: string }) {
           if (!streamingStarted && detail) setStatusDetail(detail)
         }
       )
-    } catch (err) {
+    } catch (err: any) {
       console.error("Stream error", err)
+      const errorMsg = err?.message || "Failed to receive response from the server."
+      setMessages(prev =>
+        prev.map(msg => {
+          if (msg.id === aiMsgId) {
+            const hasContent = msg.content && msg.content.trim().length > 0
+            const displayContent = hasContent
+              ? `${msg.content}\n\n⚠️ **Stream interrupted:** ${errorMsg}`
+              : `⚠️ **Failed to generate response:** ${errorMsg}`
+            return {
+              ...msg,
+              role: hasContent ? "assistant" : "system_error",
+              content: displayContent,
+              isError: true,
+              isStreaming: false
+            }
+          }
+          return msg
+        })
+      )
     } finally {
       setMessages(prev =>
         prev.map(msg =>

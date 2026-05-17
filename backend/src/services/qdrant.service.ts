@@ -24,6 +24,9 @@ function getCatalog() {
 }
 
 async function getEmbedder() {
+    if (process.env.NODE_ENV === 'production' || process.env.BYPASS_LOCAL_EMBEDDING === 'true') {
+        throw new Error('Local embedding is disabled in production/low-memory environments to prevent memory exhaustion (OOM).');
+    }
     if (!embedder) {
         embedder = await pipeline('feature-extraction', 'Xenova/bge-large-en-v1.5');
     }
@@ -68,9 +71,17 @@ export interface SHLAssessment {
 }
 
 export async function searchAssessments(query: string, limit: number = 5): Promise<SHLAssessment[]> {
+    let qdrantAssessments: any[] = [];
+    let expandedKeywords = '';
+    
+    try {
+        expandedKeywords = await expandQuery(query);
+    } catch (e) {
+        console.error('Error expanding query:', e);
+    }
+
     try {
         const extractor = await getEmbedder();
-        const expandedKeywords = await expandQuery(query);
         
         const [origOutput, expandedOutput] = await Promise.all([
             extractor(query, { pooling: 'mean', normalize: true }),
@@ -96,7 +107,7 @@ export async function searchAssessments(query: string, limit: number = 5): Promi
             with_payload: true,
         });
 
-        const qdrantAssessments = results.map((res: any) => ({
+        qdrantAssessments = results.map((res: any) => ({
             name: res.payload.name,
             url: res.payload.url,
             remote_testing: res.payload.remote_testing,
@@ -106,7 +117,11 @@ export async function searchAssessments(query: string, limit: number = 5): Promi
             description: res.payload.description,
             _score: res.score,
         }));
+    } catch (error) {
+        console.warn('Vector search failed, falling back to pure fuzzy/keyword matching:', error instanceof Error ? error.message : error);
+    }
 
+    try {
         // In-memory Keyword Fallback using fuzzysort
         const catalog = getCatalog();
         const keywordMatches: any[] = [];
@@ -115,7 +130,7 @@ export async function searchAssessments(query: string, limit: number = 5): Promi
             query,
             expandedKeywords,
             ...expandedKeywords.split(/[\s,]+/).filter(t => t.length > 3)
-        ]));
+        ].filter(Boolean)));
 
         for (const term of termsToSearch) {
             const fuzzyResults = fuzzysort.go(term, catalog, {
@@ -155,7 +170,7 @@ export async function searchAssessments(query: string, limit: number = 5): Promi
 
         return finalResults.map(({ _score, ...rest }) => rest as SHLAssessment);
     } catch (error) {
-        console.error('Error searching assessments:', error);
+        console.error('Error combining search results:', error);
         return [];
     }
 }

@@ -80,7 +80,7 @@ export function ChatInputBox({
               placeholder={disabled ? "Session complete" : placeholder}
               rows={1}
               disabled={isGenerating || disabled}
-              className="flex-1 border-none shadow-none focus-visible:ring-0 resize-none bg-transparent! text-[15px] min-h-[24px] max-h-[160px] py-1 px-0"
+              className="flex-1 border-none shadow-none focus-visible:ring-0 resize-none bg-transparent! text-base md:text-[15px] min-h-[24px] max-h-[160px] py-1 px-0"
               aria-label="Message input"
             />
 

@@ -5,14 +5,15 @@ import ReactMarkdown from 'react-markdown'
 import hljs from 'highlight.js'
 import { useChatStore } from "@/store/useChatStore"
 import { Button } from "./ui/button"
-import { IconCopy, IconCheck, IconSparkles, IconArrowUpRight } from "@tabler/icons-react"
+import { IconCopy, IconCheck, IconSparkles, IconArrowUpRight, IconAlertTriangle } from "@tabler/icons-react"
 
 type MessageProps = {
   message: {
-    role: "user" | "assistant"
+    role: "user" | "assistant" | "system_error"
     content: string
     isStreaming?: boolean
     recommendations?: any[]
+    isError?: boolean
   }
 }
 
@@ -46,7 +47,8 @@ const CodeBlock = ({ language, value }: { language: string; value: string }) => 
               <IconCopy size={14} />
               <span>Copy</span>
             </>
-          )}
+          )
+          }
         </button>
       </div>
       <pre className="code-block-pre">
@@ -64,18 +66,26 @@ import rehypeRaw from 'rehype-raw'
 
 export function ChatMessage({ message }: MessageProps) {
   const isAssistant = message.role === "assistant"
+  const isSystemError = message.role === "system_error" || message.isError
   const { setRecommendations, setRecommendationsOpen } = useChatStore()
 
   return (
-    <div className={`flex gap-4 w-full ${isAssistant ? "justify-start" : "justify-end"}`}>
+    <div className={`flex gap-4 w-full ${isAssistant || isSystemError ? "justify-start" : "justify-end"}`}>
       <div 
         className={`relative rounded-2xl text-[15px] leading-relaxed ${
-          isAssistant 
-            ? "bg-transparent text-foreground/90" 
-            : "bg-muted text-foreground border border-border shadow-sm px-5 py-3 max-w-[85%]"
+          isSystemError
+            ? "bg-red-500/10 text-red-700 dark:text-red-300 border border-red-500/30 px-5 py-3.5 max-w-[85%] shadow-sm flex items-start gap-2.5"
+            : isAssistant 
+              ? "bg-transparent text-foreground/90" 
+              : "bg-muted text-foreground border border-border shadow-sm px-5 py-3 max-w-[85%]"
         }`}
       >
-        <div className="markdown-content">
+        {isSystemError && (
+          <div className="flex-shrink-0 mt-0.5 text-red-500">
+            <IconAlertTriangle size={18} />
+          </div>
+        )}
+        <div className="markdown-content flex-1">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeRaw]}

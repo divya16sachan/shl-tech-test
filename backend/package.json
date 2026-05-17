@@ -19,12 +19,14 @@
     "fuzzysort": "^3.1.0",
     "groq-sdk": "^0.15.0",
     "mongoose": "^8.12.1",
+    "morgan": "^1.10.1",
     "ora": "^8.2.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
+    "@types/morgan": "^1.9.10",
     "@types/node": "^22.13.9",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"

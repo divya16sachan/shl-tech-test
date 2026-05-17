@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
   title: {
     default: "AI Recruiter | SHL Assessment Platform",
@@ -25,6 +33,15 @@ export const metadata: Metadata = {
   },
   description: "Advanced AI-driven recruiter for SHL assessment recommendations and comparisons. Find the perfect assessment for your candidates with ease.",
   keywords: ["AI Recruiter", "SHL Assessments", "Assessment Recommendations", "Hiring AI", "Recruitment Automation"],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "AI Recruiter",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   openGraph: {
     title: "AI Recruiter | SHL Assessment Platform",
     description: "Intelligent recommendations for SHL assessments. Streamline your hiring process.",

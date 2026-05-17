@@ -15,7 +15,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { useIsMobile } from "@/hooks/use-mobile"
+import { useIsMobile, useIsLargeScreen } from "@/hooks/use-mobile"
 import AppHeader from "@/components/app-header"
 import { usePathname } from "next/navigation"
 
@@ -27,15 +27,16 @@ export default function ChatLayout({
   const pathname = usePathname()
   const { isRecommendationsOpen, setRecommendationsOpen, recommendations } = useChatStore()
   const isMobile = useIsMobile()
+  const isLargeScreen = useIsLargeScreen()
   const isEvalPage = pathname?.startsWith("/eval")
   const hasRecommendations = !isEvalPage && recommendations && recommendations.length > 0
 
-  // If we are on mobile, default the sheet to closed on initial load
+  // If we are on smaller screen, default the sheet to closed on initial load/resize
   useEffect(() => {
-    if (isMobile) {
+    if (!isLargeScreen) {
       setRecommendationsOpen(false)
     }
-  }, [isMobile, setRecommendationsOpen])
+  }, [isLargeScreen, setRecommendationsOpen])
 
   return (
     <SidebarProvider>
@@ -50,8 +51,8 @@ export default function ChatLayout({
 
         
 
-        {/* Mobile Sidebar (Sheet) */}
-        {isMobile && hasRecommendations && (
+        {/* Mobile/Tablet Sidebar (Sheet) */}
+        {!isLargeScreen && hasRecommendations && (
           <Sheet open={isRecommendationsOpen} onOpenChange={setRecommendationsOpen}>
             <SheetContent side="right" className="p-0 w-[85%] sm:w-[400px]">
               <SheetHeader className="sr-only">
@@ -62,8 +63,8 @@ export default function ChatLayout({
           </Sheet>
         )}
       </SidebarInset>
-      {/* Desktop Sidebar */}
-        {!isMobile && hasRecommendations && (
+      {/* Desktop Sidebar (Aside) */}
+        {isLargeScreen && hasRecommendations && (
           <aside
             className={cn(
               "flex flex-col sticky top-0 shrink-0 bg-sidebar h-svh border-l border-border transition-all duration-300 ease-in-out",
